@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "debugmenu",
+	"version": "${version}",
+	"name": "Debug Menu",
+	"description": "In-game debug menu for Minecraft.",
+	"authors": [
+		"n1k1tal0x"
+	],
+	"contact": {
+		"homepage": "https://github.com/n1k1tal0x/DebugMenu",
+		"sources": "https://github.com/n1k1tal0x/DebugMenu"
+	},
+	"license": "MIT",
+	"icon": "assets/debugmenu/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"dev.n1k1tal0x.debugmenu.DebugMenu"
+		],
+		"client": [
+			"dev.n1k1tal0x.debugmenu.client.DebugMenuClient"
+		]
+	},
+	"mixins": [
+		"debugmenu.mixins.json",
+		{
+			"config": "debugmenu.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

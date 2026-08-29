@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "dev.n1k1tal0x.debugmenu.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"DebugMenuMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
