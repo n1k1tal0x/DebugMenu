@@ -204,7 +204,10 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 
 		private void activate() {
 			row.activate();
-			refresh();
+
+			// Switching the overlay changes what every IN_OVERLAY entry currently draws, so one
+			// click can make any other row in the list stale.
+			refreshRows();
 			onChanged.run();
 		}
 

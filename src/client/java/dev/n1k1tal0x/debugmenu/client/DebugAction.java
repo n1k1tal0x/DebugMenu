@@ -10,7 +10,6 @@ import com.mojang.blaze3d.platform.TextureUtil;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.debug.DebugOptionsScreen;
-import net.minecraft.client.gui.screens.debug.GameModeSwitcherScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundChangeGameModePacket;
@@ -57,8 +56,9 @@ public record DebugAction(String key, Component label, KeyMapping hotkey, Boolea
 				() -> true,
 				() -> minecraft.gui.hud.getChat().clearMessages(false)));
 
+		// Vanilla hides the coordinates behind the same check; a server may be withholding them.
 		actions.add(of(minecraft, "copy_location", minecraft.options.keyDebugCopyLocation,
-				() -> minecraft.player != null,
+				() -> minecraft.player != null && !minecraft.player.isReducedDebugInfo(),
 				() -> copyLocation(minecraft)));
 
 		actions.add(of(minecraft, "dump_version", minecraft.options.keyDebugDumpVersion,
@@ -78,10 +78,6 @@ public record DebugAction(String key, Component label, KeyMapping hotkey, Boolea
 				() -> true,
 				() -> minecraft.setScreenAndShow(new DebugOptionsScreen())));
 
-		actions.add(of(minecraft, "switch_game_mode", minecraft.options.keyDebugSwitchGameMode,
-				() -> minecraft.canSwitchGameMode() && mayChangeGameMode(minecraft),
-				() -> minecraft.setScreenAndShow(new GameModeSwitcherScreen())));
-
 		actions.add(of(minecraft, "cycle_spectator", minecraft.options.keyDebugSpectate,
 				() -> mayChangeGameMode(minecraft),
 				() -> cycleSpectator(minecraft)));
@@ -93,7 +89,7 @@ public record DebugAction(String key, Component label, KeyMapping hotkey, Boolea
 		return new DebugAction(key, DebugRow.labelFor(key, hotkey), hotkey, available, action);
 	}
 
-	/** The same permission the game itself checks before letting F3 + N or F3 + F4 through. */
+	/** The same permission the game itself checks before letting F3 + N through. */
 	private static boolean mayChangeGameMode(Minecraft minecraft) {
 		LocalPlayer player = minecraft.player;
 

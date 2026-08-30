@@ -39,8 +39,6 @@
   "debugmenu.entry.profiling.desc": "Записывает сеанс профилирования и сохраняет результат в каталог debug/.",
   "debugmenu.entry.debug_options": "Настройки отладки",
   "debugmenu.entry.debug_options.desc": "Открывает ванильный экран Debug Options.",
-  "debugmenu.entry.switch_game_mode": "Переключатель режимов",
-  "debugmenu.entry.switch_game_mode.desc": "Открывает переключатель режимов игры; требуются права оператора.",
   "debugmenu.entry.cycle_spectator": "Режим наблюдателя",
   "debugmenu.entry.cycle_spectator.desc": "Переключает между наблюдателем и предыдущим режимом игры; требуются права оператора.",
   "debugmenu.entry.game_version": "Версия игры",

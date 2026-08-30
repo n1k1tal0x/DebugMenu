@@ -40,7 +40,8 @@ public class DebugMenuClient implements ClientModInitializer {
 		});
 
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
-			if (!(screen instanceof PauseScreen)) {
+			// F3 + Esc opens a PauseScreen with no menu on it, for clean screenshots.
+			if (!(screen instanceof PauseScreen pause) || !pause.showsPauseMenu()) {
 				return;
 			}
 

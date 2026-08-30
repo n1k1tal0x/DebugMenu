@@ -39,8 +39,6 @@
   "debugmenu.entry.profiling.desc": "Records a profiling run and saves the result under debug/.",
   "debugmenu.entry.debug_options": "Debug Options",
   "debugmenu.entry.debug_options.desc": "Opens the vanilla Debug Options screen.",
-  "debugmenu.entry.switch_game_mode": "Game Mode Switcher",
-  "debugmenu.entry.switch_game_mode.desc": "Opens the game mode switcher; needs operator permission.",
   "debugmenu.entry.cycle_spectator": "Cycle Spectator",
   "debugmenu.entry.cycle_spectator.desc": "Switches between spectator and your previous game mode; needs operator permission.",
   "debugmenu.entry.game_version": "Game Version",

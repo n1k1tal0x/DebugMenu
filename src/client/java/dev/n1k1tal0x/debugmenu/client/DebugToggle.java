@@ -12,6 +12,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
+import net.minecraft.client.gui.components.debug.DebugScreenEntry;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -34,7 +35,7 @@ public interface DebugToggle extends DebugRow {
 		return Component.translatable(isOn() ? "menu.debugmenu.on" : "menu.debugmenu.off");
 	}
 
-	/** A parameter can always be flipped; only actions can be unavailable. */
+	/** Most parameters can always be flipped; entries override this when the server forbids them. */
 	@Override
 	default boolean enabled() {
 		return true;
@@ -167,6 +168,17 @@ public interface DebugToggle extends DebugRow {
 		@Override
 		public boolean isOn() {
 			return minecraft.debugEntries.isCurrentlyEnabled(id);
+		}
+
+		/**
+		 * Reduced debug info keeps an entry out of the enabled list however it is configured, so
+		 * without this the button would write a status to disk and then snap straight back.
+		 */
+		@Override
+		public boolean enabled() {
+			DebugScreenEntry entry = DebugScreenEntries.getEntry(id);
+
+			return entry != null && entry.isAllowed(minecraft.showOnlyReducedInfo());
 		}
 
 		/**
