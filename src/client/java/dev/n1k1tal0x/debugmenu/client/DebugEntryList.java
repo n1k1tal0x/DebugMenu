@@ -1,5 +1,6 @@
 package dev.n1k1tal0x.debugmenu.client;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -20,14 +21,21 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 /**
- * A scrolling list with one row per debug row: its name on the left, a help marker beside the name,
- * the key that triggers it in game in the middle, and a button on the right.
+ * A scrolling list of debug rows. Each cell shows a name with a help marker beside it, the key that
+ * triggers it in game, and a button. Rows are laid out two to a line while both columns still have
+ * room to read, and one to a line otherwise.
  */
 public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.Row> {
 	private static final Component HELP_MARKER = Component.literal("?");
 
 	private static final int ROW_HEIGHT = 24;
-	private static final int ROW_WIDTH = 360;
+	private static final int ROW_MARGIN = 24;
+
+	/** A column has to fit a name, its hotkey and a button before a second one is worth having. */
+	private static final int MIN_COLUMN_WIDTH = 280;
+	private static final int MAX_ROW_WIDTH_ONE_COLUMN = 360;
+	private static final int MAX_ROW_WIDTH_TWO_COLUMNS = 620;
+	private static final int COLUMN_GAP = 16;
 	private static final int BUTTON_WIDTH = 70;
 	private static final int HOTKEY_GAP = 8;
 	private static final int HELP_GAP = 4;
@@ -38,21 +46,54 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 	/** Keeps a long description from running off the edge of the window. */
 	private static final float TOOLTIP_WIDTH_SHARE = 0.6F;
 
+	private final List<? extends DebugRow> source;
 	private final Runnable onChanged;
+
+	private int columns;
 
 	public DebugEntryList(Minecraft minecraft, int width, int height, int y, List<? extends DebugRow> rows, Runnable onChanged) {
 		super(minecraft, width, height, y, ROW_HEIGHT);
+		this.source = rows;
 		this.onChanged = onChanged;
 
-		rows.forEach(row -> addEntry(new Row(row)));
+		rebuild(columnsFor(width));
+	}
+
+	/** Two columns only while each one keeps its minimum; a cramped second column reads worse. */
+	private static int columnsFor(int listWidth) {
+		return listWidth - ROW_MARGIN >= MIN_COLUMN_WIDTH * 2 + COLUMN_GAP ? 2 : 1;
+	}
+
+	private void rebuild(int columns) {
+		this.columns = columns;
+
+		clearEntries();
+
+		for (int i = 0; i < source.size(); i += columns) {
+			addEntry(new Row(source.subList(i, Math.min(i + columns, source.size()))));
+		}
+	}
+
+	/** The layout changes with the window, so the column count is decided again on every resize. */
+	@Override
+	public void updateSizeAndPosition(int width, int height, int y) {
+		super.updateSizeAndPosition(width, height, y);
+
+		int wanted = columnsFor(width);
+
+		if (wanted != columns) {
+			rebuild(wanted);
+		}
 	}
 
 	@Override
 	public int getRowWidth() {
-		return ROW_WIDTH;
+		int max = columns > 1 ? MAX_ROW_WIDTH_TWO_COLUMNS : MAX_ROW_WIDTH_ONE_COLUMN;
+
+		return Math.min(max, getWidth() - ROW_MARGIN);
 	}
 
-	/** Re-reads every row, for when something outside the list changed the state behind them. */
+	/** Re-reads every cell, for when something outside the list changed the state behind them. */
 	public void refreshRows() {
 		children().forEach(Row::refresh);
 	}
@@ -104,12 +145,54 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 	}
 
 	public class Row extends ContainerObjectSelectionList.Entry<Row> {
+		private final List<Cell> cells;
+
+		Row(List<? extends DebugRow> rows) {
+			this.cells = rows.stream().map(Cell::new).toList();
+		}
+
+		void refresh() {
+			cells.forEach(Cell::refresh);
+		}
+
+		@Override
+		public void extractContent(GuiGraphicsExtractor extractor, int mouseX, int mouseY, boolean hovered, float partialTick) {
+			// The last line can be half empty, so a cell keeps its column width either way.
+			int cellWidth = (getContentWidth() - COLUMN_GAP * (columns - 1)) / columns;
+
+			for (int i = 0; i < cells.size(); i++) {
+				cells.get(i).extract(extractor, getContentX() + i * (cellWidth + COLUMN_GAP), cellWidth,
+						getContentY(), getContentHeight(), mouseX, mouseY, hovered, partialTick);
+			}
+		}
+
+		@Override
+		public List<? extends GuiEventListener> children() {
+			return buttons();
+		}
+
+		@Override
+		public List<? extends NarratableEntry> narratables() {
+			return buttons();
+		}
+
+		private List<Button> buttons() {
+			List<Button> buttons = new ArrayList<>(cells.size());
+
+			cells.forEach(cell -> buttons.add(cell.button));
+
+			return buttons;
+		}
+	}
+
+	/** One debug row inside its column. */
+	private class Cell {
 		private final DebugRow row;
 		private final Component hotkey;
 		private final Component description;
 		private final Button button;
 
-		Row(DebugRow row) {
+		Cell(DebugRow row) {
 			this.row = row;
 			this.hotkey = hotkeyText(row);
 			this.description = descriptionOf(row);
@@ -130,19 +213,19 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 			button.active = row.enabled();
 		}
 
-		@Override
-		public void extractContent(GuiGraphicsExtractor extractor, int mouseX, int mouseY, boolean hovered, float partialTick) {
-			int textY = getContentY() + (getContentHeight() - minecraft.font.lineHeight) / 2;
-			int buttonX = getContentRight() - BUTTON_WIDTH;
-			int helpX = getContentX() + minecraft.font.width(row.label()) + HELP_GAP;
+		void extract(GuiGraphicsExtractor extractor, int x, int cellWidth, int y, int height,
+				int mouseX, int mouseY, boolean hovered, float partialTick) {
+			int textY = y + (height - minecraft.font.lineHeight) / 2;
+			int buttonX = x + cellWidth - BUTTON_WIDTH;
+			int helpX = x + minecraft.font.width(row.label()) + HELP_GAP;
 
-			extractor.text(minecraft.font, row.label(), getContentX(), textY, LABEL_COLOR);
+			extractor.text(minecraft.font, row.label(), x, textY, LABEL_COLOR);
 			extractor.text(minecraft.font, hotkey, buttonX - HOTKEY_GAP - minecraft.font.width(hotkey), textY, HOTKEY_COLOR);
 
 			if (description != null) {
 				extractor.text(minecraft.font, HELP_MARKER, helpX, textY, HELP_COLOR);
 
-				// Only over the marker, so the description does not pop up while aiming for the button.
+				// Only over the marker, so the description does not pop up while aiming for a button.
 				if (hovered && mouseX >= helpX && mouseX <= helpX + minecraft.font.width(HELP_MARKER)) {
 					int maxWidth = (int) (minecraft.getWindow().getGuiScaledWidth() * TOOLTIP_WIDTH_SHARE);
 
@@ -151,18 +234,8 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 			}
 
 			button.setX(buttonX);
-			button.setY(getContentY() + (getContentHeight() - button.getHeight()) / 2);
+			button.setY(y + (height - button.getHeight()) / 2);
 			button.extractRenderState(extractor, mouseX, mouseY, partialTick);
-		}
-
-		@Override
-		public List<? extends GuiEventListener> children() {
-			return List.of(button);
-		}
-
-		@Override
-		public List<? extends NarratableEntry> narratables() {
-			return List.of(button);
 		}
 	}
 }
