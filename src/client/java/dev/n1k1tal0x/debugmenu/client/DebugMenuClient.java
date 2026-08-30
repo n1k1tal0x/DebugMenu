@@ -13,8 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 public class DebugMenuClient implements ClientModInitializer {
-	// assets/debugmenu/textures/gui/sprites/icon/bug.png, drawn by tools/make_icon.py
-	public static final Identifier BUG_ICON = DebugMenu.id("icon/bug");
+	// assets/debugmenu/textures/gui/sprites/icon/nvg.png, drawn by tools/make_icon.py
+	public static final Identifier NVG_ICON = DebugMenu.id("icon/nvg");
 
 	private static final int BUTTON_SIZE = 20;
 	private static final int ICON_SIZE = 16;
@@ -32,7 +32,7 @@ public class DebugMenuClient implements ClientModInitializer {
 			SpriteIconButton button = SpriteIconButton
 					.builder(label, ignored -> client.setScreenAndShow(new DebugMenuScreen(screen)), true)
 					.size(BUTTON_SIZE, BUTTON_SIZE)
-					.sprite(BUG_ICON, ICON_SIZE, ICON_SIZE)
+					.sprite(NVG_ICON, ICON_SIZE, ICON_SIZE)
 					.build();
 
 			// Bottom left corner, clear of the vanilla pause menu buttons.

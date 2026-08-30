@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render the Debug Menu button icon from pixel art defined below.
 
-The icon is a beetle - the conventional "debug" symbol - drawn to read clearly
-at 16x16 against Minecraft's stone-grey button background.
+The icon is a pair of night vision goggles, drawn to read clearly at 16x16
+against Minecraft's stone-grey button background.
 
 Usage:
     python tools/make_icon.py
@@ -12,34 +12,34 @@ import pathlib
 import struct
 import zlib
 
-OUT = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/debugmenu/textures/gui/sprites/icon/bug.png"
+OUT = pathlib.Path(__file__).resolve().parents[1] / "src/main/resources/assets/debugmenu/textures/gui/sprites/icon/nvg.png"
 
-# . transparent  K outline  G shell  H shell highlight  W eye
+# . transparent  K housing outline  G housing  H housing highlight  L lens glow
 ART = """
 ................
 ................
-.....K....K.....
-......K..K......
-......KKKK......
-.....KWKKWK.....
-....KKKKKKKK....
-..KKKGGKKGGKKK..
-....KGGKKGGK....
-....KGHKKHGK....
-..KKKGGKKGGKKK..
-....KGGKKGGK....
-....KGHKKHGK....
-..KKKGGKKGGKKK..
-.....KKKKKK.....
+.......KK.......
+......KGGK......
+.KKKKKKGGKKKKKK.
+KHHHHHHHHHHHHHHK
+KGKKKKKGGKKKKKGK
+KGKLLLKGGKLLLKGK
+KGKLLLKGGKLLLKGK
+KGKLLLKGGKLLLKGK
+KGKKKKKGGKKKKKGK
+KGGGGGGGGGGGGGGK
+.KKKKKKKKKKKKKK.
+................
+................
 ................
 """
 
 PALETTE = {
     ".": (0, 0, 0, 0),
-    "K": (20, 24, 16, 255),
-    "G": (90, 143, 60, 255),
-    "H": (127, 183, 86, 255),
-    "W": (238, 238, 238, 255),
+    "K": (22, 24, 26, 255),
+    "G": (58, 66, 60, 255),
+    "H": (92, 102, 94, 255),
+    "L": (110, 240, 140, 255),
 }
 
 
