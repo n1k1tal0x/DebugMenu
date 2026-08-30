@@ -1,43 +1,39 @@
 package dev.n1k1tal0x.debugmenu.client;
 
-import java.util.Comparator;
 import java.util.List;
 
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
-import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryList;
-import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.gui.components.debug.DebugScreenProfile;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 
 /**
- * A scrolling list with one row per debug screen entry: the entry name on the left, a button
- * showing and flipping its state on the right.
+ * A scrolling list with one row per debug parameter: its name on the left, the key that toggles it
+ * in game in the middle, and a button showing and flipping its state on the right.
  */
 public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.Row> {
-	/** Switching an entry on shows it in the F3 overlay rather than pinning it permanently on screen. */
-	public static final DebugScreenEntryStatus ON = DebugScreenEntryStatus.IN_OVERLAY;
-	public static final DebugScreenEntryStatus OFF = DebugScreenEntryStatus.NEVER;
-
 	private static final int ROW_HEIGHT = 24;
-	private static final int ROW_WIDTH = 310;
+	private static final int ROW_WIDTH = 340;
 	private static final int TOGGLE_WIDTH = 50;
+	private static final int HOTKEY_GAP = 8;
 	private static final int LABEL_COLOR = 0xFFFFFFFF;
+	private static final int HOTKEY_COLOR = 0xFFA0A0A0;
 
+	private final List<DebugToggle> toggles;
 	private final Runnable onToggled;
 
 	public DebugEntryList(Minecraft minecraft, int width, int height, int y, Runnable onToggled) {
 		super(minecraft, width, height, y, ROW_HEIGHT);
+		this.toggles = DebugToggle.all(minecraft);
 		this.onToggled = onToggled;
 
-		DebugScreenEntries.allEntries().keySet().stream()
-				.sorted(Comparator.comparing(Identifier::toString))
-				.forEach(id -> addEntry(new Row(id)));
+		toggles.forEach(toggle -> addEntry(new Row(toggle)));
 	}
 
 	@Override
@@ -45,78 +41,92 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 		return ROW_WIDTH;
 	}
 
-	/** Re-reads every row after the footer buttons changed all entries at once. */
-	public void refreshRows() {
+	/**
+	 * Puts the debug entries back to the vanilla defaults, undoing whatever the rows switched off.
+	 * Every status is written to disk as it changes, so without this the player can end up with an
+	 * empty F3 overlay and no way back. Only entries follow the profile, so the option-backed
+	 * parameters are left alone. loadProfile does not persist on its own.
+	 */
+	public void restoreDefaults() {
+		DebugScreenEntryList entries = minecraft.debugEntries;
+
+		entries.loadProfile(DebugScreenProfile.DEFAULT);
+		entries.save();
 		children().forEach(Row::refresh);
 	}
 
-	public class Row extends ContainerObjectSelectionList.Entry<Row> {
-		private final Identifier id;
-		private final Component label;
-		private final Button toggle;
+	public boolean isDefaultProfile() {
+		return minecraft.debugEntries.isUsingProfile(DebugScreenProfile.DEFAULT);
+	}
 
-		Row(Identifier id) {
-			this.id = id;
-			this.label = labelFor(id);
-			this.toggle = Button.builder(Component.empty(), ignored -> flip())
+	/**
+	 * The modifier is a binding of its own and is not part of the toggling key, so it has to be
+	 * spelled out here. The overlay key is bound to the modifier itself, which would otherwise read
+	 * as "F3 + F3".
+	 */
+	private Component hotkeyText(DebugToggle toggle) {
+		KeyMapping hotkey = toggle.hotkey();
+
+		if (hotkey == null || hotkey.isUnbound()) {
+			return Component.empty();
+		}
+
+		KeyMapping modifier = minecraft.options.keyDebugModifier;
+
+		if (modifier.isUnbound() || hotkey.same(modifier)) {
+			return hotkey.getTranslatedKeyMessage();
+		}
+
+		return Component.translatable("menu.debugmenu.combo",
+				modifier.getTranslatedKeyMessage(),
+				hotkey.getTranslatedKeyMessage());
+	}
+
+	public class Row extends ContainerObjectSelectionList.Entry<Row> {
+		private final DebugToggle toggle;
+		private final Component hotkey;
+		private final Button button;
+
+		Row(DebugToggle toggle) {
+			this.toggle = toggle;
+			this.hotkey = hotkeyText(toggle);
+			this.button = Button.builder(Component.empty(), ignored -> flip())
 					.width(TOGGLE_WIDTH)
 					.build();
 			refresh();
 		}
 
 		private void flip() {
-			DebugScreenEntryList entries = minecraft.debugEntries;
-
-			entries.setStatus(id, entries.getStatus(id) == OFF ? ON : OFF);
-			entries.rebuildCurrentList();
-			entries.save();
-
+			toggle.set(!toggle.isOn());
 			refresh();
 			onToggled.run();
 		}
 
 		void refresh() {
-			boolean on = minecraft.debugEntries.getStatus(id) != OFF;
-			toggle.setMessage(Component.translatable(on ? "menu.debugmenu.on" : "menu.debugmenu.off"));
+			button.setMessage(Component.translatable(toggle.isOn() ? "menu.debugmenu.on" : "menu.debugmenu.off"));
 		}
 
 		@Override
 		public void extractContent(GuiGraphicsExtractor extractor, int mouseX, int mouseY, boolean hovered, float partialTick) {
 			int textY = getContentY() + (getContentHeight() - minecraft.font.lineHeight) / 2;
-			extractor.text(minecraft.font, label, getContentX(), textY, LABEL_COLOR);
+			int buttonX = getContentRight() - TOGGLE_WIDTH;
 
-			toggle.setX(getContentRight() - TOGGLE_WIDTH);
-			toggle.setY(getContentY() + (getContentHeight() - toggle.getHeight()) / 2);
-			toggle.extractRenderState(extractor, mouseX, mouseY, partialTick);
+			extractor.text(minecraft.font, toggle.label(), getContentX(), textY, LABEL_COLOR);
+			extractor.text(minecraft.font, hotkey, buttonX - HOTKEY_GAP - minecraft.font.width(hotkey), textY, HOTKEY_COLOR);
+
+			button.setX(buttonX);
+			button.setY(getContentY() + (getContentHeight() - button.getHeight()) / 2);
+			button.extractRenderState(extractor, mouseX, mouseY, partialTick);
 		}
 
 		@Override
 		public List<? extends GuiEventListener> children() {
-			return List.of(toggle);
+			return List.of(button);
 		}
 
 		@Override
 		public List<? extends NarratableEntry> narratables() {
-			return List.of(toggle);
+			return List.of(button);
 		}
-	}
-
-	/** Debug entries carry no translation keys, so the identifier path becomes the label. */
-	private static Component labelFor(Identifier id) {
-		StringBuilder name = new StringBuilder();
-
-		for (String word : id.getPath().split("_")) {
-			if (word.isEmpty()) {
-				continue;
-			}
-
-			if (!name.isEmpty()) {
-				name.append(' ');
-			}
-
-			name.append(Character.toUpperCase(word.charAt(0))).append(word, 1, word.length());
-		}
-
-		return Component.literal(name.toString());
 	}
 }

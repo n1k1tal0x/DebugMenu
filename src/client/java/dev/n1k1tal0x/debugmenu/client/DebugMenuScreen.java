@@ -1,21 +1,15 @@
 package dev.n1k1tal0x.debugmenu.client;
 
-import java.util.Set;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.debug.DebugScreenEntries;
-import net.minecraft.client.gui.components.debug.DebugScreenEntryList;
-import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 
-/** Every debug screen entry in one scrolling column, each with its own On/Off button. */
+/** Every debug parameter in one scrolling column, each with its hotkey and its own On/Off button. */
 public class DebugMenuScreen extends Screen {
 	private static final int TOGGLE_WIDTH = 80;
 	private static final int FOOTER_SPACING = 8;
@@ -24,8 +18,7 @@ public class DebugMenuScreen extends Screen {
 	private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
 
 	private DebugEntryList list;
-	private Button enableAll;
-	private Button disableAll;
+	private Button restoreDefaults;
 
 	public DebugMenuScreen(Screen parent) {
 		super(Minecraft.getInstance(), Minecraft.getInstance().font, Component.translatable("menu.debugmenu.title"));
@@ -40,10 +33,7 @@ public class DebugMenuScreen extends Screen {
 				layout.getHeaderHeight(), this::refreshToggles));
 
 		LinearLayout footer = LinearLayout.horizontal().spacing(FOOTER_SPACING);
-		enableAll = footer.addChild(Button.builder(Component.translatable("menu.debugmenu.enable_all"), ignored -> switchAll(DebugEntryList.ON))
-				.width(TOGGLE_WIDTH)
-				.build());
-		disableAll = footer.addChild(Button.builder(Component.translatable("menu.debugmenu.disable_all"), ignored -> switchAll(DebugEntryList.OFF))
+		restoreDefaults = footer.addChild(Button.builder(Component.translatable("menu.debugmenu.restore_defaults"), ignored -> restoreDefaults())
 				.width(TOGGLE_WIDTH)
 				.build());
 		footer.addChild(Button.builder(CommonComponents.GUI_DONE, ignored -> onClose())
@@ -57,36 +47,17 @@ public class DebugMenuScreen extends Screen {
 		repositionElements();
 	}
 
-	/**
-	 * Switching on only lifts entries that are off, so an entry the player pinned with ALWAYS_ON is
-	 * not quietly demoted to overlay-only.
-	 */
-	private void switchAll(DebugScreenEntryStatus status) {
-		DebugScreenEntryList entries = minecraft.debugEntries;
-
-		for (Identifier id : DebugScreenEntries.allEntries().keySet()) {
-			if (status != DebugEntryList.ON || entries.getStatus(id) == DebugEntryList.OFF) {
-				entries.setStatus(id, status);
-			}
-		}
-
-		entries.rebuildCurrentList();
-		entries.save();
-
-		list.refreshRows();
+	private void restoreDefaults() {
+		list.restoreDefaults();
 		refreshToggles();
 	}
 
 	/**
-	 * A button whose action would change nothing is switched off. An inactive button ignores clicks,
-	 * so this is also what blocks the click event once everything is already on (or already off).
+	 * A button whose action would change nothing is switched off, and an inactive button ignores
+	 * clicks: there is nothing to restore while the entries already match the default profile.
 	 */
 	private void refreshToggles() {
-		DebugScreenEntryList entries = minecraft.debugEntries;
-		Set<Identifier> ids = DebugScreenEntries.allEntries().keySet();
-
-		enableAll.active = ids.stream().anyMatch(id -> entries.getStatus(id) == DebugEntryList.OFF);
-		disableAll.active = ids.stream().anyMatch(id -> entries.getStatus(id) != DebugEntryList.OFF);
+		restoreDefaults.active = !list.isDefaultProfile();
 	}
 
 	@Override

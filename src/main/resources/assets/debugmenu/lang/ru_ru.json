@@ -1,8 +1,8 @@
 {
   "menu.debugmenu.open": "Меню отладки",
   "menu.debugmenu.title": "Меню отладки",
+  "menu.debugmenu.combo": "%s + %s",
   "menu.debugmenu.on": "Вкл",
   "menu.debugmenu.off": "Выкл",
-  "menu.debugmenu.enable_all": "Всё вкл",
-  "menu.debugmenu.disable_all": "Всё выкл"
+  "menu.debugmenu.restore_defaults": "Сброс"
 }

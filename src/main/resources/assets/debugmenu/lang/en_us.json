@@ -1,8 +1,8 @@
 {
   "menu.debugmenu.open": "Debug Menu",
   "menu.debugmenu.title": "Debug Menu",
+  "menu.debugmenu.combo": "%s + %s",
   "menu.debugmenu.on": "On",
   "menu.debugmenu.off": "Off",
-  "menu.debugmenu.enable_all": "All on",
-  "menu.debugmenu.disable_all": "All off"
+  "menu.debugmenu.restore_defaults": "Reset"
 }
