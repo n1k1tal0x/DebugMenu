@@ -61,7 +61,16 @@
 | `key.debug.spectate` | Cycle Spectator |
 | `key.debug.switchGameMode` | Game Mode Switcher |
 
-Четыре биндинга (`fpsCharts`, `networkCharts`, `profilingChart`, `lightmapTexture`) в список `F3 + Q` не попадают — их текущие сочетания видно в экране Controls. Исторически графики вызывались через `Shift + F3` (круговая диаграмма профилировщика) и `Alt + F3` (график времени кадра).
+Четыре биндинга в список `F3 + Q` не попадают, хотя сочетания у них есть — вот их значения по умолчанию (считаны из `Options.debugKeys` в чистом клиенте 26.2):
+
+| Сочетание | Действие |
+|---|---|
+| `F3 + 1` | Profiling Chart — график профилировщика |
+| `F3 + 2` | FPS Charts — графики FPS |
+| `F3 + 3` | Network Charts — сетевые графики |
+| `F3 + 4` | Lightmap Texture — текстура карты освещения |
+
+Ещё два биндинга — `key.debug.overlay` (сам `F3`) и `key.debug.modifier` — в `debugKeys` не входят: они не «F3 + что-то», а сам механизм вызова.
 
 ---
 

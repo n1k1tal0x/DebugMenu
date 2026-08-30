@@ -1,0 +1,7 @@
+{
+  "menu.debugmenu.open": "Debug Menu",
+  "menu.debugmenu.title": "Debug Menu",
+  "menu.debugmenu.combo": "%s + %s",
+  "menu.debugmenu.entry": "%s: %s",
+  "menu.debugmenu.unbound": "Unbound"
+}
