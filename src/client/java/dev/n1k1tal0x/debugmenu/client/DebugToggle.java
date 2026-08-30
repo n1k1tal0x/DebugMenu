@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
 import net.minecraft.network.chat.Component;
@@ -18,22 +20,30 @@ import net.minecraft.resources.Identifier;
  * A debug parameter that can be switched on and off, together with the key that toggles it in game.
  *
  * The parameters F3 + Q advertises are a mixed bag: hitboxes and chunk borders are debug screen
- * entries, advanced tooltips and lost focus pause are plain options, and the overlay is its own
- * flag. KeyboardHandler wires each key to exactly one of those, and this interface hides the
- * difference behind a single on/off contract.
+ * entries, advanced tooltips and lost focus pause are plain options, the charts live on the debug
+ * overlay, and the overlay itself is its own flag. KeyboardHandler wires each key to exactly one of
+ * those, and this interface hides the difference behind a single on/off contract.
  */
-public interface DebugToggle {
-	/** Slug behind this parameter's translation keys: debugmenu.entry.<key> and .desc. */
-	String key();
-
-	Component label();
-
-	/** The key that flips this parameter in game, or null when only this menu can reach it. */
-	KeyMapping hotkey();
-
+public interface DebugToggle extends DebugRow {
 	boolean isOn();
 
 	void set(boolean on);
+
+	@Override
+	default Component buttonLabel() {
+		return Component.translatable(isOn() ? "menu.debugmenu.on" : "menu.debugmenu.off");
+	}
+
+	/** A parameter can always be flipped; only actions can be unavailable. */
+	@Override
+	default boolean enabled() {
+		return true;
+	}
+
+	@Override
+	default void activate() {
+		set(!isOn());
+	}
 
 	/** Parameters with a hotkey come first - those are the ones the F3 + Q list is about. */
 	static List<DebugToggle> all(Minecraft minecraft) {
@@ -45,14 +55,14 @@ public interface DebugToggle {
 
 		toggles.add(new Flag(
 				"overlay",
-				labelFor("overlay", minecraft.options.keyDebugOverlay),
+				DebugRow.labelFor("overlay", minecraft.options.keyDebugOverlay),
 				minecraft.options.keyDebugOverlay,
 				() -> minecraft.debugEntries.isOverlayVisible(),
 				on -> minecraft.debugEntries.setOverlayVisible(on)));
 
 		toggles.add(new Flag(
 				"advanced_tooltips",
-				labelFor("advanced_tooltips", minecraft.options.keyDebugShowAdvancedTooltips),
+				DebugRow.labelFor("advanced_tooltips", minecraft.options.keyDebugShowAdvancedTooltips),
 				minecraft.options.keyDebugShowAdvancedTooltips,
 				() -> minecraft.options.advancedItemTooltips,
 				on -> {
@@ -62,7 +72,7 @@ public interface DebugToggle {
 
 		toggles.add(new Flag(
 				"focus_pause",
-				labelFor("focus_pause", minecraft.options.keyDebugFocusPause),
+				DebugRow.labelFor("focus_pause", minecraft.options.keyDebugFocusPause),
 				minecraft.options.keyDebugFocusPause,
 				() -> minecraft.options.pauseOnLostFocus,
 				on -> {
@@ -70,11 +80,20 @@ public interface DebugToggle {
 					minecraft.options.save();
 				}));
 
+		toggles.add(chart(minecraft, "profiler_chart", minecraft.options.keyDebugPofilingChart,
+				DebugScreenOverlay::showProfilerChart, DebugScreenOverlay::toggleProfilerChart));
+		toggles.add(chart(minecraft, "fps_charts", minecraft.options.keyDebugFpsCharts,
+				DebugScreenOverlay::showFpsCharts, DebugScreenOverlay::toggleFpsCharts));
+		toggles.add(chart(minecraft, "network_charts", minecraft.options.keyDebugNetworkCharts,
+				DebugScreenOverlay::showNetworkCharts, DebugScreenOverlay::toggleNetworkCharts));
+		toggles.add(chart(minecraft, "lightmap_texture", minecraft.options.keyDebugLightmapTexture,
+				DebugScreenOverlay::showLightmapTexture, DebugScreenOverlay::toggleLightmapTexture));
+
 		List<DebugToggle> entries = new ArrayList<>();
 
 		for (Identifier id : DebugScreenEntries.allEntries().keySet()) {
 			String key = keyOf(id);
-			entries.add(new Entry(key, labelFor(key, derivedName(id)), keyed.get(id), minecraft, id));
+			entries.add(new Entry(key, DebugRow.labelFor(key, derivedName(id)), keyed.get(id), minecraft, id));
 		}
 
 		entries.sort(Comparator
@@ -85,13 +104,18 @@ public interface DebugToggle {
 		return List.copyOf(toggles);
 	}
 
-	/** Only entries this mod ships a translation for get a nicer name; anything else keeps its id. */
-	private static Component labelFor(String key, String fallback) {
-		return Component.translatableWithFallback("debugmenu.entry." + key, fallback);
-	}
+	/** The overlay charts only expose a toggle, so setting a state means flipping when it differs. */
+	private static DebugToggle chart(Minecraft minecraft, String key, KeyMapping hotkey,
+			Predicate<DebugScreenOverlay> reader, Consumer<DebugScreenOverlay> flip) {
+		return new Flag(key, DebugRow.labelFor(key, hotkey), hotkey,
+				() -> reader.test(minecraft.getDebugOverlay()),
+				on -> {
+					DebugScreenOverlay overlay = minecraft.getDebugOverlay();
 
-	private static Component labelFor(String key, KeyMapping fallback) {
-		return labelFor(key, Component.translatable(fallback.getName()).getString());
+					if (reader.test(overlay) != on) {
+						flip.accept(overlay);
+					}
+				});
 	}
 
 	/** Entries from other mods keep their namespace, so their keys cannot collide with vanilla ones. */
@@ -99,7 +123,7 @@ public interface DebugToggle {
 		return id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "." + id.getPath();
 	}
 
-	/** Debug entries carry no translation keys, so the identifier path becomes the label. */
+	/** Debug entries carry no translation keys, so the identifier path becomes the fallback name. */
 	private static String derivedName(Identifier id) {
 		StringBuilder name = new StringBuilder();
 
