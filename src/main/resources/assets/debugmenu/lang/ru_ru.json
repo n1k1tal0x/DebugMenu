@@ -1,6 +1,8 @@
 {
   "menu.debugmenu.open": "Меню отладки",
   "menu.debugmenu.title": "Меню отладки",
+  "menu.debugmenu.enable_all": "Вкл",
+  "menu.debugmenu.disable_all": "Выкл",
   "menu.debugmenu.combo": "%s + %s",
   "menu.debugmenu.entry": "%s: %s",
   "menu.debugmenu.unbound": "Не назначено"

@@ -35,9 +35,9 @@ public class DebugMenuClient implements ClientModInitializer {
 					.sprite(BUG_ICON, ICON_SIZE, ICON_SIZE)
 					.build();
 
-			// Top right corner, clear of the vanilla pause menu buttons.
-			button.setX(width - BUTTON_SIZE - MARGIN);
-			button.setY(MARGIN);
+			// Bottom left corner, clear of the vanilla pause menu buttons.
+			button.setX(MARGIN);
+			button.setY(height - BUTTON_SIZE - MARGIN);
 			button.setTooltip(Tooltip.create(label));
 
 			Screens.getWidgets(screen).add(button);
