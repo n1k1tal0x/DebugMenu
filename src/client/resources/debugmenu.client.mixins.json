@@ -2,9 +2,7 @@
 	"required": true,
 	"package": "dev.n1k1tal0x.debugmenu.client.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [
-		"DebugMenuClientMixin"
-	],
+	"client": [],
 	"injectors": {
 		"defaultRequire": 1
 	},
