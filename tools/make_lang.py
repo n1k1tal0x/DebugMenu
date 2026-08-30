@@ -24,6 +24,7 @@ UI = {
     "menu.debugmenu.run":              ("Run", "Выполнить"),
     "menu.debugmenu.section.parameters": ("Parameters", "Параметры"),
     "menu.debugmenu.section.actions":    ("Actions", "Действия"),
+    "key.debugmenu.open":               ("Open Debug Menu", "Открыть меню отладки"),
 }
 
 # key, en name, en description, ru name, ru description

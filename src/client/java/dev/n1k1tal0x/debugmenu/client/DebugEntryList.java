@@ -7,7 +7,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import org.lwjgl.glfw.GLFW;
 
-import dev.n1k1tal0x.debugmenu.client.mixin.KeyMappingAccessor;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -84,7 +84,7 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 	 * active when the key was first named and never follows a layout change.
 	 */
 	private static Component keyName(KeyMapping mapping) {
-		InputConstants.Key key = ((KeyMappingAccessor) mapping).debugmenu$boundKey();
+		InputConstants.Key key = KeyMappingHelper.getBoundKeyOf(mapping);
 
 		if (key.getType() == InputConstants.Type.KEYSYM) {
 			String name = GLFW.glfwGetKeyName(key.getValue(), 0);

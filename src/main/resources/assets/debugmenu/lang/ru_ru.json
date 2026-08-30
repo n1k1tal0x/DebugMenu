@@ -8,6 +8,7 @@
   "menu.debugmenu.run": "Выполнить",
   "menu.debugmenu.section.parameters": "Параметры",
   "menu.debugmenu.section.actions": "Действия",
+  "key.debugmenu.open": "Открыть меню отладки",
   "debugmenu.entry.overlay": "Отладочный экран",
   "debugmenu.entry.overlay.desc": "Главный переключатель F3: записи в режиме «только в оверлее» видны, пока он открыт.",
   "debugmenu.entry.advanced_tooltips": "Расширенные подсказки",

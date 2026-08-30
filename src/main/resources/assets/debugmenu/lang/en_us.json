@@ -8,6 +8,7 @@
   "menu.debugmenu.run": "Run",
   "menu.debugmenu.section.parameters": "Parameters",
   "menu.debugmenu.section.actions": "Actions",
+  "key.debugmenu.open": "Open Debug Menu",
   "debugmenu.entry.overlay": "Debug Overlay",
   "debugmenu.entry.overlay.desc": "Master switch for the F3 screen: entries set to overlay-only show while it is open.",
   "debugmenu.entry.advanced_tooltips": "Advanced Tooltips",
