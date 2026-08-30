@@ -23,6 +23,9 @@ import net.minecraft.resources.Identifier;
  * difference behind a single on/off contract.
  */
 public interface DebugToggle {
+	/** Slug behind this parameter's translation keys: debugmenu.entry.<key> and .desc. */
+	String key();
+
 	Component label();
 
 	/** The key that flips this parameter in game, or null when only this menu can reach it. */
@@ -41,13 +44,15 @@ public interface DebugToggle {
 		List<DebugToggle> toggles = new ArrayList<>();
 
 		toggles.add(new Flag(
-				named(minecraft.options.keyDebugOverlay),
+				"overlay",
+				labelFor("overlay", minecraft.options.keyDebugOverlay),
 				minecraft.options.keyDebugOverlay,
 				() -> minecraft.debugEntries.isOverlayVisible(),
 				on -> minecraft.debugEntries.setOverlayVisible(on)));
 
 		toggles.add(new Flag(
-				named(minecraft.options.keyDebugShowAdvancedTooltips),
+				"advanced_tooltips",
+				labelFor("advanced_tooltips", minecraft.options.keyDebugShowAdvancedTooltips),
 				minecraft.options.keyDebugShowAdvancedTooltips,
 				() -> minecraft.options.advancedItemTooltips,
 				on -> {
@@ -56,7 +61,8 @@ public interface DebugToggle {
 				}));
 
 		toggles.add(new Flag(
-				named(minecraft.options.keyDebugFocusPause),
+				"focus_pause",
+				labelFor("focus_pause", minecraft.options.keyDebugFocusPause),
 				minecraft.options.keyDebugFocusPause,
 				() -> minecraft.options.pauseOnLostFocus,
 				on -> {
@@ -67,8 +73,8 @@ public interface DebugToggle {
 		List<DebugToggle> entries = new ArrayList<>();
 
 		for (Identifier id : DebugScreenEntries.allEntries().keySet()) {
-			KeyMapping hotkey = keyed.get(id);
-			entries.add(new Entry(hotkey != null ? named(hotkey) : derivedName(id), hotkey, minecraft, id));
+			String key = keyOf(id);
+			entries.add(new Entry(key, labelFor(key, derivedName(id)), keyed.get(id), minecraft, id));
 		}
 
 		entries.sort(Comparator
@@ -79,12 +85,22 @@ public interface DebugToggle {
 		return List.copyOf(toggles);
 	}
 
-	private static Component named(KeyMapping mapping) {
-		return Component.translatable(mapping.getName());
+	/** Only entries this mod ships a translation for get a nicer name; anything else keeps its id. */
+	private static Component labelFor(String key, String fallback) {
+		return Component.translatableWithFallback("debugmenu.entry." + key, fallback);
+	}
+
+	private static Component labelFor(String key, KeyMapping fallback) {
+		return labelFor(key, Component.translatable(fallback.getName()).getString());
+	}
+
+	/** Entries from other mods keep their namespace, so their keys cannot collide with vanilla ones. */
+	private static String keyOf(Identifier id) {
+		return id.getNamespace().equals("minecraft") ? id.getPath() : id.getNamespace() + "." + id.getPath();
 	}
 
 	/** Debug entries carry no translation keys, so the identifier path becomes the label. */
-	private static Component derivedName(Identifier id) {
+	private static String derivedName(Identifier id) {
 		StringBuilder name = new StringBuilder();
 
 		for (String word : id.getPath().split("_")) {
@@ -99,11 +115,11 @@ public interface DebugToggle {
 			name.append(Character.toUpperCase(word.charAt(0))).append(word, 1, word.length());
 		}
 
-		return Component.literal(name.toString());
+		return name.toString();
 	}
 
 	/** A parameter backed by a boolean somewhere in the client. */
-	record Flag(Component label, KeyMapping hotkey, BooleanSupplier reader, Consumer<Boolean> writer)
+	record Flag(String key, Component label, KeyMapping hotkey, BooleanSupplier reader, Consumer<Boolean> writer)
 			implements DebugToggle {
 		@Override
 		public boolean isOn() {
@@ -117,7 +133,7 @@ public interface DebugToggle {
 	}
 
 	/** A parameter backed by a debug screen entry status. */
-	record Entry(Component label, KeyMapping hotkey, Minecraft minecraft, Identifier id)
+	record Entry(String key, Component label, KeyMapping hotkey, Minecraft minecraft, Identifier id)
 			implements DebugToggle {
 		/**
 		 * Whether the entry is being drawn right now, not merely how it is configured: an entry set

@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.debug.DebugScreenEntryList;
 import net.minecraft.client.gui.components.debug.DebugScreenProfile;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -82,14 +83,22 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 				hotkey.getTranslatedKeyMessage());
 	}
 
+	/** Not every parameter is described, and a missing key would otherwise show up as a raw string. */
+	private static Component descriptionOf(DebugToggle toggle) {
+		String key = "debugmenu.entry." + toggle.key() + ".desc";
+		return Language.getInstance().has(key) ? Component.translatable(key) : null;
+	}
+
 	public class Row extends ContainerObjectSelectionList.Entry<Row> {
 		private final DebugToggle toggle;
 		private final Component hotkey;
+		private final Component description;
 		private final Button button;
 
 		Row(DebugToggle toggle) {
 			this.toggle = toggle;
 			this.hotkey = hotkeyText(toggle);
+			this.description = descriptionOf(toggle);
 			this.button = Button.builder(Component.empty(), ignored -> flip())
 					.width(TOGGLE_WIDTH)
 					.build();
@@ -111,8 +120,15 @@ public class DebugEntryList extends ContainerObjectSelectionList<DebugEntryList.
 			int textY = getContentY() + (getContentHeight() - minecraft.font.lineHeight) / 2;
 			int buttonX = getContentRight() - TOGGLE_WIDTH;
 
+			int labelWidth = minecraft.font.width(toggle.label());
+
 			extractor.text(minecraft.font, toggle.label(), getContentX(), textY, LABEL_COLOR);
 			extractor.text(minecraft.font, hotkey, buttonX - HOTKEY_GAP - minecraft.font.width(hotkey), textY, HOTKEY_COLOR);
+
+			// Only over the name itself, so the tooltip does not cover the button the player is aiming for.
+			if (hovered && description != null && mouseX <= getContentX() + labelWidth) {
+				extractor.setTooltipForNextFrame(minecraft.font, description, mouseX, mouseY);
+			}
 
 			button.setX(buttonX);
 			button.setY(getContentY() + (getContentHeight() - button.getHeight()) / 2);
